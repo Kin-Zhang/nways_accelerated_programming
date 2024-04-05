@@ -51,7 +51,7 @@ Bootcamp prerequisites: Basic experience with C/C++ or Fortran is needed for the
 
 
 
-### Instructions
+## Instructions
 
 1. Clone the repository:
    ```bash
@@ -72,3 +72,6 @@ Bootcamp prerequisites: Basic experience with C/C++ or Fortran is needed for the
    ```
    http://localhost:8888
    ```
+5. Follow the instructions in the Jupyter Notebook to proceed with the bootcamp. Link here is to clone code, visualize as jupyter notebook path.
+   - [labs/_start_nways.ipynb](_basic/_start_nways.ipynb).
+   - [_challenge/minicfd.ipynb](_challenge/minicfd.ipynb).
