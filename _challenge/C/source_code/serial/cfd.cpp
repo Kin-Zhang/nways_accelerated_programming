@@ -103,6 +103,7 @@ int main(int argc, char **argv)
       for(j=0;j<n+2;j++)
 	{
 	  psi[i*(m+2)+j]=0.0;
+      psitmp[i*(m+2)+j]=0.0;
 	}
     }
     nvtxRangePop(); //pop 
@@ -131,6 +132,7 @@ int main(int argc, char **argv)
     nvtxRangePush("Boundary_PSI");
 
   boundarypsi(psi,m,n,b,h,w);
+  boundarypsi(psitmp,m,n,b,h,w);
     nvtxRangePop(); //pop 
 
   //compute normalisation factor for error
@@ -217,13 +219,9 @@ int main(int argc, char **argv)
       //copy back
       nvtxRangePush("Switch_Array");
 
-      for(i=1;i<=m;i++)
-	{
-	  for(j=1;j<=n;j++)
-	    {
-	      psi[i*(m+2)+j]=psitmp[i*(m+2)+j];
-	    }
-	}
+    double *tmp = psi;
+    psi = psitmp;
+    psitmp = tmp;
 
       if (!irrotational)
 	{
