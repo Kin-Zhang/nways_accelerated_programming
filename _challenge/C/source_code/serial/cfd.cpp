@@ -1,7 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <math.h>
-
+#include <queue>
 #include "arraymalloc.h"
 #include "boundary.h"
 #include "jacobi.h"
@@ -219,9 +219,7 @@ int main(int argc, char **argv)
       //copy back
       nvtxRangePush("Switch_Array");
 
-    double *tmp = psi;
-    psi = psitmp;
-    psitmp = tmp;
+    std::swap(psi, psitmp);
 
       if (!irrotational)
 	{
