@@ -17,12 +17,12 @@ All of these are C/C++ version:
 |  Approach  | Running Time(s) | Description  |
 | ---------- | ----------- | ------------ |
 | Raw Serial Baseline        | 7.2941    |   Problem: redundant on swap things|
-| ✔️ Improved Serial Baseline      | 4.32531    |   Improve: raw, commit: https://github.com/Kin-Zhang/nways_accelerated_programming/commit/9d4139039d5cc0ece32c69aa76440667338e967a, @(Paul Hoffrogge) is the one who find this |
+| ✔️ Improved Serial Baseline      | 4.32531    |   Improve: raw, commit: [9d4139](https://github.com/Kin-Zhang/nways_accelerated_programming/tree/9d4139039d5cc0ece32c69aa76440667338e967a), @(Paul Hoffrogge) is the one who find this |
 | ✔️ Compiler Optimization `-O3`      | 1.0917    |  adding `-O3` in CFLAGS on Makefile, compiler optimization  |
 | ✔️ ISO stdpar     | 0.0655479    |  v2 std::par inside jacobistep, counting_iterator needed for the fastest speed. complie w gpu  |
-| ✔️ OpenACC     | 0.064914    |  check [openacc\jacobi.cpp](openacc\jacobi.cpp). complie w gpu  |
-| 🔘 OpenMP     | 0.436107    |  check [openmp\jacobi.cpp](openmp\jacobi.cpp). complie w gpu  |
-| ✔️ CUDA unified Memory | 0.063468  |  the easiest way to do cuda  |
+| ✔️ OpenACC     | 0.064914    |  check [openacc\jacobi.cpp](openacc\jacobi.cpp). run w gpu  |
+| 🔘 OpenMP     | 0.436107    |  check [openmp\jacobi.cpp](openmp\jacobi.cpp). run w gpu  |
+| ✔️ CUDA unified Memory | 0.063468  |  the easiest way to do cuda, commit: [0d906ccbe2](https://github.com/Kin-Zhang/nways_accelerated_programming/tree/0d906ccbe205e189cb1771c29abcf733d4a8b8a1)  |
 | ✔️ CUDA best     |  0.00104499  |  all device memory and no sync duration cal, sync at end. error result is correct as serial code: the error is 0.00211211  |
 
 Best screenshot, error checked same with serial code, always 0.00211211:
