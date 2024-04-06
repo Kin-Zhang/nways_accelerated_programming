@@ -1,0 +1,17 @@
+OpenMP folder
+
+Result:
+```
+nvc++ -mp=gpu -gpu:managed,lineinfo -O3 -march=native -lm -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/cuda/11.8/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/cuda/11.8/lib64 -lnvToolsExt -o cfd arraymalloc.o boundary.o cfd.o cfdio.o jacobi.o 
+Scale Factor = 64, iterations = 500
+Irrotational flow
+Running CFD on 2048 x 2048 grid in serial
+
+Starting main loop...
+
+
+... finished
+After 500 iterations, the error is 0.00211211
+Time for 500 iterations was 0.436107 seconds
+Each iteration took 0.000872214 seconds
+```
