@@ -12,6 +12,8 @@ All of these are C/C++ version:
 
 * All of following are tested on: Desktop setting: i9-12900KF, GPU 3090, with [Dockerfile](../Dockerfile) environment.
 
+* Except the first Raw, all other are use the improved serial code as the base file.
+
 |  Approach  | Running Time(s) | Description  |
 | ---------- | ----------- | ------------ |
 | Raw Serial Baseline        | 7.2941    |   Problem: redundant on swap things|
@@ -21,4 +23,8 @@ All of these are C/C++ version:
 | ✔️ OpenACC     | 0.064914    |  check [openacc\jacobi.cpp](openacc\jacobi.cpp). complie w gpu  |
 | 🔘 OpenMP     | 0.436107    |  check [openmp\jacobi.cpp](openmp\jacobi.cpp). complie w gpu  |
 | ✔️ CUDA unified Memory | 0.063468  |  the easiest way to do cuda  |
-| 🔘 CUDA best     |      |     |
+| ✔️ CUDA best     |  0.00104499  |  all device memory and no sync duration cal, sync at end. error result is correct as serial code: the error is 0.00211211  |
+
+Best screenshot, error checked same with serial code, always 0.00211211:
+
+![cuda_best](../_assets/best.png)
