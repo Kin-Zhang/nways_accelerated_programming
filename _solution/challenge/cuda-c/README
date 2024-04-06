@@ -1,2 +1,56 @@
 CUDA-C folder
 
+Tips which I tried to figure out 2 hours.... Thanks to Kayran Schmidt:
+1. Change filename all `.cpp` files to `.cu`.
+
+2. Change Makefile all `.cpp` to `.cu`.
+
+3. The Memory Allocate should be aware which device you want to allocate memory. Take a look again about [course material: nways_cuda](../../../_basic/cuda/jupyter_notebook/nways_cuda.ipynb).
+   - The easiest one is Unified Memory: Use `cudaMallocManaged()` to allocate unified memory and use kernel function directly.
+
+4. Never forget to Sync the device after kernel function.
+    ```cpp
+    jacobistep<<<nblock, nthreads>>>(psitmp,psi,m,n);
+    + cudaDeviceSynchronize();
+    ```
+5. `nthreads` matters not only runtime but also result correctness. If you set `nthreads` too high, the result will be wrong or speed will be slow. So, you should find the best `nthreads` for your problem.
+    ```cpp
+    dim3 nthreads(16, 16, 1);
+    ```
+
+Changed:
+- `cfd.cu`:
+- `jacobi.cu`:
+- `jacobi.h`:
+
+
+### Different Memory Allocation Results
+
+#### Unified Memory
+
+```bash
+... finished
+After 500 iterations, the error is 0.00211211
+Time for 500 iterations was 0.0773821 seconds
+Each iteration took 0.000154764 seconds
+
+
+Writing data files ...
+... done!
+
+Written gnuplot script 'cfd.plt'
+Generating '/tmp/nsys-report-5f5c.qdstrm'
+[1/8] [========================100%] minicfdcudac_profile.nsys-rep
+[2/8] [========================100%] minicfdcudac_profile.sqlite
+[3/8] Executing 'nvtx_sum' stats report
+
+ Time (%)  Total Time (ns)  Instances   Avg (ns)    Med (ns)   Min (ns)  Max (ns)  StdDev (ns)   Style           Range        
+ --------  ---------------  ---------  ----------  ----------  --------  --------  -----------  -------  ---------------------
+     43.7         77381473          1  77381473.0  77381473.0  77381473  77381473          0.0  PushPop  Overall_Iteration    
+     31.6         56015273        500    112030.5     97425.5     93806   7537817     332773.3  PushPop  JacobiStep           
+     12.0         21195175        500     42390.4        61.0        56  21161214     946355.2  PushPop  Calculate_Error      
+      7.9         13969888          1  13969888.0  13969888.0  13969888  13969888          0.0  PushPop  Initialization       
+      4.9          8596542          1   8596542.0   8596542.0   8596542   8596542          0.0  PushPop  Compute_Normalization
+      0.0            36606        500        73.2        67.0        63       435         33.4  PushPop  Switch_Array         
+      0.0            28834          1     28834.0     28834.0     28834     28834          0.0  PushPop  Boundary_PSI         
+```
