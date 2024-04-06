@@ -10,7 +10,8 @@
 int main(int argc, char **argv)
 {
   int printfreq=1000; //output frequency
-  double error, bnorm;
+  double bnorm;
+  double *error;
   double tolerance=0.0; //tolerance for convergence. <=0 means do not check
 
   //main arrays
@@ -96,11 +97,13 @@ int main(int argc, char **argv)
   // psitmp = (double *) malloc((m+2)*(n+2)*sizeof(double));
   cudaMallocManaged((void**)&psi, (m+2)*(n+2)*sizeof(double));
   cudaMallocManaged((void**)&psitmp, (m+2)*(n+2)*sizeof(double));
+  cudaMallocManaged((void**)&error, sizeof(double));
 
     nvtxRangePush("Initialization");
   // NOTE(Qingwen): faster to use memset than loop through array
   memset(psi, 0, (m+2)*(n+2)*sizeof(double));
   memset(psitmp, 0, (m+2)*(n+2)*sizeof(double));
+  memset(error, 0, sizeof(double));
     nvtxRangePop(); //pop 
 
   if (!irrotational)
@@ -190,15 +193,22 @@ int main(int argc, char **argv)
        
       if (checkerr || iter == numiter)
 	{
-	  error = deltasq(psitmp,psi,m,n);
+	  deltasq<<<nblock, nthreads>>>(psitmp,psi,m,n, error);
 
 	  if(!irrotational)
 	    {
-	      error += deltasq(zettmp,zet,m,n);
+        double *error_tmp;
+        cudaMallocManaged((void**)&error_tmp, sizeof(double));
+	      deltasq<<<nblock, nthreads>>>(zettmp,zet,m,n,error_tmp);
+        *error += *error_tmp;
+        cudaFree(error_tmp);
 	    }
 
-	  error=sqrt(error);
-	  error=error/bnorm;
+	  // error=sqrt(error);
+	  // error=error/bnorm;
+    cudaDeviceSynchronize();
+    *error = sqrt(*error) / bnorm;
+    
 	}
       nvtxRangePop(); //pop 
 
@@ -206,7 +216,7 @@ int main(int argc, char **argv)
 
       if (checkerr)
 	{
-	  if (error < tolerance)
+	  if (*error < tolerance)
 	    {
 	      printf("Converged on iteration %d\n",iter);
 	      break;
@@ -246,7 +256,7 @@ int main(int argc, char **argv)
 	    }
 	  else
 	    {
-	      printf("Completed iteration %d, error = %g\n",iter,error);
+	      printf("Completed iteration %d, error = %g\n",iter,*error);
 	    }
 	}
      
@@ -264,7 +274,7 @@ int main(int argc, char **argv)
   //print out some stats
 
   printf("\n... finished\n");
-  printf("After %d iterations, the error is %g\n",iter,error);
+  printf("After %d iterations, the error is %g\n",iter,*error);
   printf("Time for %d iterations was %g seconds\n",iter,ttot);
   printf("Each iteration took %g seconds\n",titer);
 
@@ -275,8 +285,9 @@ int main(int argc, char **argv)
   writeplotfile(m,n,scalefactor);
 
   //free un-needed arrays
-  free(psi);
-  free(psitmp);
+  cudaFree(psi);
+  cudaFree(psitmp);
+  cudaFree(error);
 
   if (!irrotational)
     {

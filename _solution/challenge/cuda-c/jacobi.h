@@ -7,4 +7,4 @@ void jacobistepvort(double *zetnew, double *psinew,
 		    double *zet,    double* psi,
 		    int m, int n, double re);
 
-double deltasq(double *newarr, double *oldarr, int m, int n);
+__global__ void deltasq(double *newarr, double *oldarr, int m, int n, double* dsq);

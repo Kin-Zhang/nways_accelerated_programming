@@ -54,3 +54,8 @@ Generating '/tmp/nsys-report-5f5c.qdstrm'
       0.0            36606        500        73.2        67.0        63       435         33.4  PushPop  Switch_Array         
       0.0            28834          1     28834.0     28834.0     28834     28834          0.0  PushPop  Boundary_PSI         
 ```
+
+### Device Memory
+
+```bash
+```
