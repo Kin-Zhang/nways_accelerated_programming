@@ -19,9 +19,9 @@ Tips which I tried to figure out 2 hours.... Thanks to Kayran Schmidt:
     ```
 
 Changed:
-- `cfd.cu`:
-- `jacobi.cu`:
-- `jacobi.h`:
+- `cfd.cu`: all data to GPU memory. add `cudaDeviceSynchronize()` after the end of process when we want to get the result and save data.
+- `jacobi.cu` & `jacobi.h`: change all func to `__global__`. setup the index correctly.
+- `boundary.cu` & `boundary.h`: add two func for device calculation. change all func to `__global__`.
 
 
 ### Different Memory Allocation Results
@@ -58,4 +58,29 @@ Generating '/tmp/nsys-report-5f5c.qdstrm'
 ### Device Memory
 
 ```bash
+... finished
+After 500 iterations, the error is 0.00211211
+Time for 500 iterations was 0.00110817 seconds
+Each iteration took 2.21634e-06 seconds
+
+
+Writing data files ...
+... done!
+
+Written gnuplot script 'cfd.plt'
+... finished
+Generating '/tmp/nsys-report-d3a6.qdstrm'
+[1/7] [========================100%] minicfdcudac_profile.nsys-rep
+[2/7] [========================100%] minicfdcudac_profile.sqlite
+[3/7] Executing 'nvtx_sum' stats report
+
+ Time (%)  Total Time (ns)  Instances  Avg (ns)   Med (ns)   Min (ns)  Max (ns)  StdDev (ns)   Style           Range        
+ --------  ---------------  ---------  ---------  ---------  --------  --------  -----------  -------  ---------------------
+     51.6          1107448          1  1107448.0  1107448.0   1107448   1107448          0.0  PushPop  Overall_Iteration    
+     37.6           806478        500     1613.0     1457.0      1397     26418       1556.5  PushPop  JacobiStep           
+      7.2           155433        500      310.9       68.0        63    120404       5381.5  PushPop  Switch_Array         
+      1.6            34936        500       69.9       61.0        57      3896        171.6  PushPop  Calculate_Error      
+      1.2            25852          1    25852.0    25852.0     25852     25852          0.0  PushPop  Initialization       
+      0.6            12723          1    12723.0    12723.0     12723     12723          0.0  PushPop  Boundary_PSI         
+      0.1             2244          1     2244.0     2244.0      2244      2244          0.0  PushPop  Compute_Normalization
 ```

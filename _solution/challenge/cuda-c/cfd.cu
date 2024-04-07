@@ -10,8 +10,7 @@
 int main(int argc, char **argv)
 {
   int printfreq=1000; //output frequency
-  double bnorm;
-  double *error;
+  double *error, *bnorm;
   double tolerance=0.0; //tolerance for convergence. <=0 means do not check
 
   //main arrays
@@ -92,176 +91,120 @@ int main(int argc, char **argv)
 
   printf("Running CFD on %d x %d grid in cuda\n",m,n);
 
-  //allocate arrays
-  // psi    = (double *) malloc((m+2)*(n+2)*sizeof(double));
-  // psitmp = (double *) malloc((m+2)*(n+2)*sizeof(double));
-  cudaMallocManaged((void**)&psi, (m+2)*(n+2)*sizeof(double));
-  cudaMallocManaged((void**)&psitmp, (m+2)*(n+2)*sizeof(double));
-  cudaMallocManaged((void**)&error, sizeof(double));
+  int sizedata = (m+2)*(n+2)*sizeof(double);
+  //Allocate memory on GPU
+  cudaMalloc((void**)&psi, sizedata);
+  cudaMalloc((void**)&psitmp, sizedata);
+  cudaMalloc((void**)&error, sizeof(double));
+  cudaMalloc((void**)&bnorm, sizeof(double));
 
     nvtxRangePush("Initialization");
   // NOTE(Qingwen): faster to use memset than loop through array
-  memset(psi, 0, (m+2)*(n+2)*sizeof(double));
-  memset(psitmp, 0, (m+2)*(n+2)*sizeof(double));
-  memset(error, 0, sizeof(double));
+  cudaMemset(psi, 0, sizedata);
+  cudaMemset(psitmp, 0, sizedata);
+  cudaMemset(error, 0, sizeof(double));
+  cudaMemset(bnorm, 0, sizeof(double));
     nvtxRangePop(); //pop 
 
-  if (!irrotational)
-    {
-      //allocate arrays
 
-      zet =   (double *) malloc((m+2)*(n+2)*sizeof(double));
-      zettmp =(double *) malloc((m+2)*(n+2)*sizeof(double));
+  if (!irrotational){
+    //allocate arrays
+    cudaMalloc((void**)&zet, (sizedata));
+    cudaMalloc((void**)&zettmp, (sizedata));
 
-      //zero the zeta array
-      nvtxRangePush("Initialization");
-
-      for (i=0;i<m+2;i++)
-	{
-	  for(j=0;j<n+2;j++)
-	    {
-	      zet[i*(m+2)+j]=0.0;
-	    }
-	}
-       nvtxRangePop(); //pop for REading file
-    }
+    //zero the zeta array
+    nvtxRangePush("Initialization");
+    cudaMemset(zet, 0, sizedata);
+    nvtxRangePop(); //pop for REading file
+  }
   
   //set the psi boundary conditions
     nvtxRangePush("Boundary_PSI");
-  boundarypsi(psi,m,n,b,h,w);
-  boundarypsi(psitmp,m,n,b,h,w);
+  boundarypsi<<<dim3(1),dim3(1)>>>(psi,m,n,b,h,w);
+  boundarypsi<<<dim3(1),dim3(1)>>>(psitmp,m,n,b,h,w);
     nvtxRangePop(); //pop 
+  // Note(Qingwen): no need if all on the same device.
+  // cudaDeviceSynchronize(); 
+
 
   //compute normalisation factor for error
-
-  bnorm=0.0;
+  dim3 nthreads(16, 16, 1);
+  dim3 nblock(( m + nthreads.x -1 ) / nthreads.x, 
+              ( n + nthreads.y -1 ) / nthreads.y, 1);
+              
     nvtxRangePush("Compute_Normalization");
-  for (i=0;i<m+2;i++)
-    {
-      for (j=0;j<n+2;j++)
-	{
-	  bnorm += psi[i*(m+2)+j]*psi[i*(m+2)+j];
-	}
-    }
-     nvtxRangePop(); //pop 
+  initialnorm<<<dim3((m + 1 + nthreads.x) / nthreads.x, (n + 1 + nthreads.y) / nthreads.y, 1),nthreads>>>(psi,bnorm,m,n);
+    nvtxRangePop();
 
   if (!irrotational)
     {
       //update zeta BCs that depend on psi
-      boundaryzet(zet,psi,m,n);
+      boundaryzet<<<dim3(1),dim3(1)>>>(zet,psi,m,n);
 
       //update normalisation
       nvtxRangePush("Compute_Normalization");
-      for (i=0;i<m+2;i++)
-	{
-	  for (j=0;j<n+2;j++)
-	    {
-	      bnorm += zet[i*(m+2)+j]*zet[i*(m+2)+j];
-	    }
-	}
-       nvtxRangePop(); //pop 
+    initialnorm<<<dim3((m + 1 + nthreads.x) / nthreads.x, (n + 1 + nthreads.y) / nthreads.y, 1),nthreads>>>(zet,bnorm,m,n);
+      nvtxRangePop();
     }
-
-  bnorm=sqrt(bnorm);
-
-  //begin iterative Jacobi loop
-  dim3 nthreads(16, 16, 1);
-  dim3 nblock(( m + nthreads.x -1 ) / nthreads.x, 
-              ( n + nthreads.y -1 ) / nthreads.y, 1);
+  
+  // no need for now I added them into the func:  *error = sqrt(*error) / sqrt(*bnorm);
+  // bnorm=sqrt(bnorm); 
 
   printf("\nStarting main loop...\n\n");
   
   tstart=gettime();
-   nvtxRangePush("Overall_Iteration");
+  nvtxRangePush("Overall_Iteration");
 
-  for(iter=1;iter<=numiter;iter++)
-    {
-      //calculate psi for next iteration
-      nvtxRangePush("JacobiStep");
-      if (irrotational)
-	{
-	  jacobistep<<<nblock, nthreads>>>(psitmp,psi,m,n);
-    cudaDeviceSynchronize();
-	}
-      else
-	{
-	  jacobistepvort(zettmp,psitmp,zet,psi,m,n,re);
-	}
-      nvtxRangePop(); //pop 
-      nvtxRangePush("Calculate_Error");
-      //calculate current error if required
-       
-      if (checkerr || iter == numiter)
-	{
-	  deltasq<<<nblock, nthreads>>>(psitmp,psi,m,n, error);
+  for(iter=1;iter<=numiter;iter++){
 
-	  if(!irrotational)
-	    {
-        double *error_tmp;
-        cudaMallocManaged((void**)&error_tmp, sizeof(double));
-	      deltasq<<<nblock, nthreads>>>(zettmp,zet,m,n,error_tmp);
-        *error += *error_tmp;
-        cudaFree(error_tmp);
-	    }
+    //calculate psi for next iteration
+    nvtxRangePush("JacobiStep");
+    if (irrotational)
+      jacobistep<<<nblock, nthreads>>>(psitmp,psi,m,n);
+    else
+      jacobistepvort<<<nblock, nthreads>>>(zettmp,psitmp,zet,psi,m,n,re);
+    nvtxRangePop(); //pop 
 
-	  // error=sqrt(error);
-	  // error=error/bnorm;
-    cudaDeviceSynchronize();
-    *error = sqrt(*error) / bnorm;
-    
-	}
-      nvtxRangePop(); //pop 
-
-      //quit early if we have reached required tolerance
-
-      if (checkerr)
-	{
-	  if (*error < tolerance)
-	    {
-	      printf("Converged on iteration %d\n",iter);
-	      break;
-	    }
-	}
-
-      //copy back
-      nvtxRangePush("Switch_Array");
-
-    std::swap(psi, psitmp);
-
-      if (!irrotational)
-	{
-	  for(i=1;i<=m;i++)
-	    {
-	      for(j=1;j<=n;j++)
-		{
-		  zet[i*(m+2)+j]=zettmp[i*(m+2)+j];
-		}
-	    }
-	}
-      nvtxRangePop(); //pop 
-
-      if (!irrotational)
-	{
-	  //update zeta BCs that depend on psi
-	  boundaryzet(zet,psi,m,n);
-	}
-
-      //print loop information
-
-      if(iter%printfreq == 0)
-	{
-	  if (!checkerr)
-	    {
-	      printf("Completed iteration %d\n",iter);
-	    }
-	  else
-	    {
-	      printf("Completed iteration %d, error = %g\n",iter,*error);
-	    }
-	}
-     
+    //calculate current error if required
+    nvtxRangePush("Calculate_Error");
+    if (checkerr || iter == numiter){
+      deltasq<<<nblock, nthreads>>>(psitmp,psi,m,n, error);
+      computerr<<<1, 1>>>(error, bnorm);
     }
-     nvtxRangePop(); //pop 
+    nvtxRangePop();
+
+    //quit early if we have reached required tolerance
+    if (checkerr){
+      // FIXME: should have better way, but since we didn't run this part no affects on speed now.
+      double host_error;
+      cudaMemcpy(&host_error, error, sizeof(double), cudaMemcpyDeviceToHost);
+      if (host_error < tolerance){
+        printf("Converged on iteration %d\n",iter);
+        break;
+      }
+    }
+
+    nvtxRangePush("Switch_Array");
+    std::swap(psi, psitmp);
+    if (!irrotational)
+      std::swap(zet, zettmp);
+    nvtxRangePop();
+    
+    //update zeta BCs that depend on psi
+    if (!irrotational)
+      boundaryzet<<<dim3(1),dim3(1)>>>(zet,psi,m,n);
+
+    //print loop information
+
+    if(iter%printfreq == 0){
+      if (!checkerr)
+        printf("Completed iteration %d\n",iter);
+      else
+        printf("Completed iteration %d, error = \n",iter);
+    }
+  }// end of iteration loop
+
+  nvtxRangePop(); //pop for Overall_Iteration
 
   if (iter > numiter) iter=numiter;
 
@@ -270,30 +213,36 @@ int main(int argc, char **argv)
   ttot=tstop-tstart;
   titer=ttot/(double)iter;
 
+  // Important(Qingwen): we only need to sync at the end here:
+  cudaDeviceSynchronize();
 
-  //print out some stats
+  //copy error back to host
+  double h_error;
+  cudaMemcpy(&h_error, error, sizeof(double), cudaMemcpyDeviceToHost);
+  double* h_psi;
+  cudaHostAlloc((void**)&h_psi, sizedata, cudaHostAllocDefault);
+  cudaMemcpy(h_psi, psi, sizedata, cudaMemcpyDeviceToHost);
 
   printf("\n... finished\n");
-  printf("After %d iterations, the error is %g\n",iter,*error);
+  printf("After %d iterations, the error is %g\n",iter,h_error);
   printf("Time for %d iterations was %g seconds\n",iter,ttot);
   printf("Each iteration took %g seconds\n",titer);
 
   //output results
-
-  writedatafiles(psi,m,n, scalefactor);
-
+  writedatafiles(h_psi,m,n, scalefactor);
   writeplotfile(m,n,scalefactor);
 
   //free un-needed arrays
   cudaFree(psi);
   cudaFree(psitmp);
   cudaFree(error);
-
-  if (!irrotational)
-    {
-      free(zet);
-      free(zettmp);
-    }
+  cudaFree(bnorm);
+  cudaFreeHost(h_psi);
+  
+  if (!irrotational){
+    cudaFree(zet);
+    cudaFree(zettmp);
+  }
 
   printf("... finished\n");
 

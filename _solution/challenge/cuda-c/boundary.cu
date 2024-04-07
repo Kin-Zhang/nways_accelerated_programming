@@ -1,9 +1,26 @@
 #include "boundary.h"
 #include <stdio.h>
+#include <nvtx3/nvToolsExt.h>
+#include <cuda_runtime.h>
+
+__global__ void computerr(double *error, double *bnorm)
+{
+    if (blockIdx.x == 0 && threadIdx.x == 0) {
+        *error = sqrt(*error) / sqrt(*bnorm);
+    }
+}
 
 //grid is parallelised in the x direction
+__global__ void initialnorm(double *psi, double *bnorm,int m, int n)
+{
+  int i = blockIdx.x * blockDim.x + threadIdx.x;
+  int j = blockIdx.y * blockDim.y + threadIdx.y;
 
-void boundarypsi(double *psi, int m, int n, int b, int h, int w)
+  if (i>=(m+2) || j>=(m+2)) return;
+
+  atomicAdd(bnorm, psi[i*(m+2)+j]*psi[i*(m+2)+j]); // 
+}
+__global__ void boundarypsi(double *psi, int m, int n, int b, int h, int w)
 {
 
   int i,j;
@@ -33,7 +50,7 @@ void boundarypsi(double *psi, int m, int n, int b, int h, int w)
     }
 }
 
-void boundaryzet(double *zet, double *psi, int m, int n)
+__global__ void boundaryzet(double *zet, double *psi, int m, int n)
 {
   int i,j;
 
