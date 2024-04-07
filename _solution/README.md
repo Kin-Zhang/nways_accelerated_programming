@@ -2,7 +2,7 @@ Solution
 ---
 
 
-This is not official solution but mine solution... Maybe you can do better than me. I would like to thank Kayran Schmidt for his help. Figure out how to setup cuda one correctly. 
+This is not the official solution but my personal solution... Maybe you can do better than me. I would like to thank Kayran Schmidt for his help in figuring out how to set up cuda one correctly. 
 
 ### Result Table
 

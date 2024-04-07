@@ -45,13 +45,9 @@ Demo:
 
 Bootcamp prerequisites: Basic experience with C/C++ or Fortran is needed for the "N-Ways to GPU Programming-C-Fortran" Bootcamp and Python is needed for the "N-Ways to GPU Programming-Python" Bootcamp. No GPU programming experience is required.
 
-0th day – 2 April 2024
+[Material | PPT](), [Recording | Video]()
 
-- 11:00–12:00	Cluster Dry Run Session
-
----
-
-1st day – 3 April 2024
+Day1 – 3 April 2024
 
 - 09:00–09:05	Welcome (Moderator)
 - 09:05–09:30	Introduction to GPU Computing (Lecture)
@@ -61,7 +57,7 @@ Bootcamp prerequisites: Basic experience with C/C++ or Fortran is needed for the
 
 ---
 
-2nd day – 4 April 2024
+Day2 – 4 April 2024
 
 - 09:00–10:30	Directive Based Programming with OpenACC or OpenMP on GPU (Lecture and Lab)
 - 10:30–12:30	CUDA C/Fortran Programming (Lecture and Lab)
@@ -70,7 +66,7 @@ Bootcamp prerequisites: Basic experience with C/C++ or Fortran is needed for the
 
 ---
 
-3rd day – 5 April 2024
+Day3 – 5 April 2024
 
 - 09:00–12:00	Code Challenge
 - 09:00–0930	Targeting GPUs from Python [Optional]
