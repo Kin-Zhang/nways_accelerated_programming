@@ -213,9 +213,6 @@ int main(int argc, char **argv)
   ttot=tstop-tstart;
   titer=ttot/(double)iter;
 
-  // Important(Qingwen): we only need to sync at the end here:
-  cudaDeviceSynchronize();
-
   //copy error back to host
   double h_error;
   cudaMemcpy(&h_error, error, sizeof(double), cudaMemcpyDeviceToHost);

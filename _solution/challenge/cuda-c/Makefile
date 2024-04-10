@@ -6,8 +6,8 @@
 
 # HINT 3) For the CUDA C version, make sure the SUFFIXES and CC are correct  
 
-CC=	nvc++
-CFLAGS=	-arch=native -lm -I/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/cuda/11.8/include -L/opt/nvidia/hpc_sdk/Linux_x86_64/23.5/cuda/11.8/lib64 -lnvToolsExt
+CC=	nvcc
+CFLAGS=	-arch=native
 LFLAGS=
 
 # System independent definitions
